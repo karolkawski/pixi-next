@@ -1,57 +1,70 @@
+import { useEffect, useRef } from "react";
 import { Sprite, useTick } from "@pixi/react";
-import { useEffect, useState } from "react";
-import { usePlayer } from "./PlayerContext";
+import { Sprite as PixiSprite } from "pixi.js";
+import { gsap } from "gsap";
+import { IPlayerProps } from "../types/Player.d";
 
-  export const Bunny = ({speed}) => {
-    const bunnyUrl = 'https://pixijs.io/pixi-react/img/bunny.png';
-    const { playerPosition, setPlayerPosition, lives, setLives, points, setPoints, enemies, setEnemies, coins, setCoins } = usePlayer();
+export const Bunny = ({
+  speed,
+  playerPosition,
+  targetCoin,
+  coins,
+  collectCoin,
+}: IPlayerProps) => {
+  const bunnyUrl = "https://pixijs.io/pixi-react/img/bunny.png";
 
-    const [x, setX] = useState(playerPosition.x);
-    const [y, setY] = useState(playerPosition.y);
-    const [xEnd, setXEnd] = useState(playerPosition.x);
-    const [yEnd, setYEnd] = useState(playerPosition.y);
-  
+  const bunnyRef = useRef<PixiSprite>(null);
+  const currentPosition = useRef({ ...playerPosition });
 
-    useTick(delta => {
-      const dx = xEnd - x;
-      const dy = yEnd - y;
+  useEffect(() => {
+    const collectingMargin = 10;
+    currentPosition.current = { ...playerPosition }; 
+    if (bunnyRef.current && targetCoin !== null) {
+      gsap.to(bunnyRef.current, {
+        x: playerPosition.x,
+        y: playerPosition.y,
+        duration: 0.5, 
+        ease: "power1.out", 
+        onUpdate: () => {},
+        onComplete: () => {
+          const coin = coins[targetCoin];
+          console.log("🚀 ~ useEffect ~ coin:", coin);
+          if (coin) {
+            if (
+              coin.x - collectingMargin <= bunnyRef.current.x &&
+              bunnyRef.current.x <= coin.x + collectingMargin &&
+              coin.y - collectingMargin <= bunnyRef.current.y &&
+              bunnyRef.current.y <= coin.y + collectingMargin
+            ) {
+
+              collectCoin(targetCoin);
+            }
+          }
+        },
+      });
+    }
+  }, [targetCoin]);
+
+  useTick((delta) => {
+    if (bunnyRef.current) {
+      const dx = playerPosition.x - bunnyRef.current.x;
+      const dy = playerPosition.y - bunnyRef.current.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      setPlayerPosition({x, y})
 
-      if (distance > speed) {
-        const normalizedDX = (dx / distance) * speed;
-        const normalizedDY = (dy / distance) * speed;
-
-        setX(prevX => prevX + normalizedDX);
-        setY(prevY => prevY + normalizedDY);
-      } else {
-        setX(xEnd);
-        setY(yEnd);
-        
+      if (distance > 1) {
+        bunnyRef.current.x += (dx / distance) * speed * delta; 
+        bunnyRef.current.y += (dy / distance) * speed * delta; 
       }
+    }
+  });
 
-    });
-
-    useEffect(() => {
-      const handleClick = (event: MouseEvent) => {
-        event.preventDefault(); 
-        setXEnd(event.clientX); 
-        setYEnd(event.clientY);
-      };
-
-      window.addEventListener('click', handleClick);
-      return () => {
-        window.removeEventListener('click', handleClick);
-      };
-    }, []);
-
-    return (
-      <Sprite
-        image={bunnyUrl}
-        x={x}
-        y={y}
-        anchor={0.5}
-        scale={1.3}
-      />
-    );
-  }
+  return (
+    <Sprite
+      ref={bunnyRef} 
+      image={bunnyUrl}
+      x={currentPosition.current.x} 
+      y={currentPosition.current.y} 
+      anchor={0.5}
+    />
+  );
+};

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@pixi/react": "^7.1.2",
+    "gsap": "^3.12.5",
     "next": "14.2.15",
     "pixi.js": "^8.5.1",
     "react": "^18",
