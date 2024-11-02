@@ -6,22 +6,40 @@ import { usePlayer } from "./PlayerContext";
 import { useEffect, useState } from "react";
 import { ICoin } from "../types/Coin.d";
 import { IEnemy } from "../types/Enemy.d";
+import { useGame } from "./GameContext";
 
 export const MyStage = () => {
-  const { playerPosition, setPlayerPosition, coins, setCoins, lives, setLives, points, setPoints, enemies } = usePlayer();
+  const {
+    playerPosition,
+    setPlayerPosition,
+    lives,
+    setLives,
+  } = usePlayer();
+  const {
+    coins,
+    setCoins,
+    points,
+    setPoints,
+    enemies,
+  } = useGame();
   const [targetCoin, setTargetCoin] = useState<number | null>(null);
   const [gameOver, setGameOver] = useState<boolean>(false);
 
   const collectCoin = (index: number) => {
-   setPoints(prevPoints => prevPoints + 1);
-    setCoins((prevCoins: ICoin[]) =>
-        [...prevCoins, prevCoins[index].selected = true]
-    );
-    setTargetCoin(null); 
+    setPoints((prevPoints) => prevPoints + 1);
+   setCoins((prevCoins: ICoin[]) => {
+     return prevCoins.map((coin, i) => {
+       if (i === index) {
+         return { ...coin, selected: true };
+       }
+       return coin; 
+     });
+   });
+    setTargetCoin(null);
   };
 
   const getCoinID = (index: number) => {
-    setTargetCoin(index); 
+    setTargetCoin(index);
   };
   const handleClick = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const { clientX, clientY } = event.nativeEvent;
@@ -32,20 +50,18 @@ export const MyStage = () => {
     };
 
     console.log(`Clicked position: x=${newPosition.x}, y=${newPosition.y}`);
-    setPlayerPosition(newPosition); 
+    setPlayerPosition(newPosition);
   };
 
-
   const handleEnemyAttack = (): void => {
-    setLives(lives -1 )
-  }
+    setLives(lives - 1);
+  };
 
   useEffect(() => {
     if (lives <= 0) {
-        setGameOver(true)
-    };
-
-  }, [lives])
+      setGameOver(true);
+    }
+  }, [lives]);
 
   return (
     <Stage
@@ -59,7 +75,6 @@ export const MyStage = () => {
           <Text text={`GAME OVER`} x={300} y={300} />
           <Text text={`Points: ${points}`} x={20} y={550} />
         </>
-
       ) : (
         <>
           {coins.map((coin, index) => (
